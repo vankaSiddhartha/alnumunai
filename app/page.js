@@ -1,113 +1,316 @@
-import Image from 'next/image'
-
-export default function Home() {
+import React from 'react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Users, BookOpen, Calendar, Medal, Mail, BarChart3, Network, Globe2, Code, Rocket, Gift, Trophy } from "lucide-react";
+import Link from 'next/link';
+const LandingPage = () => {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.js</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <div className="min-h-screen bg-black text-white">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-900/10 to-transparent"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 relative">
+          <div className="text-center">
+            <h1 className="text-6xl font-bold text-white mb-6">
+              Next-Gen Alumni Management
+            </h1>
+            <p className="text-2xl text-gray-300 mb-8">
+              Empower your institution with AI-driven alumni engagement
+            </p>
+            <div className="space-x-4">
+            <Link href="/login">
+  <Button size="lg" className="bg-white hover:bg-gray-100 text-black">
+    Start Free Trial
+  </Button>
+</Link>
+              <Button size="lg" variant="outline" className="text-white border-white hover:bg-gray-900">
+                <h1 className='text-black'>Watch Demo</h1>
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
+      {/* Stats Section */}
+      <div className="border-y border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <StatCard number="50k+" label="Active Alumni" />
+            <StatCard number="1000+" label="Events Hosted" />
+            <StatCard number="98%" label="Satisfaction" />
+            <StatCard number="24/7" label="Support" />
+          </div>
+        </div>
       </div>
 
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800 hover:dark:bg-opacity-30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+      {/* Features Grid */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <h2 className="text-4xl font-bold text-center text-white mb-16">
+          Powerful Features for Modern Institutions
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <FeatureCard 
+            icon={<Users className="w-8 h-8 text-white" />}
+            title="Smart Directory"
+            description="AI-powered alumni database with advanced filtering and automatic updates"
+          />
+          <FeatureCard 
+            icon={<Calendar className="w-8 h-8 text-white" />}
+            title="Event Management"
+            description="Seamless event planning with automated reminders and RSVP tracking"
+          />
+          <FeatureCard 
+            icon={<Mail className="w-8 h-8 text-white" />}
+            title="Intelligent Communications"
+            description="AI-driven personalized emails and engagement scoring"
+          />
+          <FeatureCard 
+            icon={<Network className="w-8 h-8 text-white" />}
+            title="Career Network"
+            description="Built-in job board and AI-powered mentor matching system"
+          />
+          <FeatureCard 
+            icon={<BarChart3 className="w-8 h-8 text-white" />}
+            title="Advanced Analytics"
+            description="Real-time dashboards and predictive engagement metrics"
+          />
+          <FeatureCard 
+            icon={<Globe2 className="w-8 h-8 text-white" />}
+            title="Global Chapters"
+            description="Manage regional groups with automated chapter creation"
+          />
+        </div>
       </div>
-    </main>
-  )
-}
+
+      {/* Integration Section */}
+      <div className="border-y border-white/10 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold mb-4">Seamless Integrations</h2>
+            <p className="text-gray-400">Works with your favorite tools</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <IntegrationCard name="Salesforce" />
+            <IntegrationCard name="Slack" />
+            <IntegrationCard name="Zoom" />
+            <IntegrationCard name="LinkedIn" />
+          </div>
+        </div>
+      </div>
+
+      {/* Testimonial Section */}
+      <div className="py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-4xl font-bold mb-16">Success Stories</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <TestimonialCard
+                quote="The AI-driven engagement features have transformed how we connect with alumni."
+                author="Dr. Sarah Johnson"
+                role="Alumni Director, Tech University"
+                rating={5}
+              />
+              <TestimonialCard
+                quote="We've seen a 300% increase in alumni participation since implementing this platform."
+                author="Michael Chen"
+                role="Development Officer, Business School"
+                rating={5}
+              />
+              <TestimonialCard
+                quote="The automation features saved our team countless hours of manual work."
+                author="Emily Rodriguez"
+                role="Community Manager, State College"
+                rating={5}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Pricing Section */}
+      <div className="py-20 border-t border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-4xl font-bold text-center mb-16">Simple Pricing</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <PricingCard 
+              tier="Starter"
+              price="$499"
+              features={[
+                "Up to 5,000 alumni",
+                "Basic analytics",
+                "Email campaigns",
+                "Event management"
+              ]}
+            />
+            <PricingCard 
+              tier="Professional"
+              price="$999"
+              featured={true}
+              features={[
+                "Up to 25,000 alumni",
+                "Advanced analytics",
+                "AI-powered engagement",
+                "Career network",
+                "Premium support"
+              ]}
+            />
+            <PricingCard 
+              tier="Enterprise"
+              price="Custom"
+              features={[
+                "Unlimited alumni",
+                "Custom features",
+                "Dedicated support",
+                "API access",
+                "White-labeling"
+              ]}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="border-y border-white/10 py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl font-bold mb-6">
+            Ready to Transform Your Alumni Network?
+          </h2>
+          <p className="text-xl text-gray-300 mb-8">
+            Join leading institutions already using our platform
+          </p>
+          <div className="space-x-4">
+            <Button size="lg" className="bg-white text-black hover:bg-gray-100">
+              Start Free Trial
+            </Button>
+            <Button size="lg" variant="outline" className="text-white border-white hover:bg-gray-900">
+              Schedule Demo
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Product</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li>Features</li>
+                <li>Pricing</li>
+                <li>Security</li>
+                <li>Roadmap</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Company</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li>About</li>
+                <li>Careers</li>
+                <li>Blog</li>
+                <li>Contact</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Resources</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li>Documentation</li>
+                <li>API</li>
+                <li>Guides</li>
+                <li>Support</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Legal</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li>Privacy</li>
+                <li>Terms</li>
+                <li>Security</li>
+                <li>Compliance</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+const FeatureCard = ({ icon, title, description }) => {
+  return (
+    <Card className="bg-black border border-white/10 hover:border-white/20 transition-all duration-300">
+      <CardHeader>
+        <div className="mb-4">{icon}</div>
+        <CardTitle className="text-xl font-bold text-white">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-gray-400">{description}</p>
+      </CardContent>
+    </Card>
+  );
+};
+
+const TestimonialCard = ({ quote, author, role, rating }) => {
+  return (
+    <Card className="bg-black border border-white/10">
+      <CardContent className="pt-6">
+        <div className="flex text-white mb-4">
+          {[...Array(rating)].map((_, i) => (
+            <Trophy key={i} className="w-4 h-4" />
+          ))}
+        </div>
+        <p className="text-lg mb-4 text-gray-300">"{quote}"</p>
+        <p className="font-semibold text-white">{author}</p>
+        <p className="text-gray-400">{role}</p>
+      </CardContent>
+    </Card>
+  );
+};
+
+const StatCard = ({ number, label }) => {
+  return (
+    <div className="text-center">
+      <div className="text-4xl font-bold text-white mb-2">{number}</div>
+      <div className="text-gray-400">{label}</div>
+    </div>
+  );
+};
+
+const IntegrationCard = ({ name }) => {
+  return (
+    <Card className="bg-black border border-white/10">
+      <CardContent className="p-6 text-center">
+        <h3 className="text-lg font-semibold">{name}</h3>
+      </CardContent>
+    </Card>
+  );
+};
+
+const PricingCard = ({ tier, price, features, featured = false }) => {
+  return (
+    <Card className={`bg-black border ${featured ? 'border-white' : 'border-white/10'}`}>
+      <CardHeader>
+        <CardTitle className="text-2xl font-bold text-center">{tier}</CardTitle>
+        <div className="text-center">
+          <span className="text-4xl font-bold">{price}</span>
+          {price !== "Custom" && <span className="text-gray-400">/month</span>}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-4">
+          {features.map((feature, index) => (
+            <li key={index} className="flex items-center">
+              <Rocket className="w-5 h-5 text-white mr-2" />
+              <span className="text-gray-300">{feature}</span>
+            </li>
+          ))}
+        </ul>
+        <Button className={`w-full mt-6 ${featured ? 'bg-white text-black hover:bg-gray-100' : 'bg-black text-white border-white hover:bg-gray-900'}`}>
+          Get Started
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default LandingPage;

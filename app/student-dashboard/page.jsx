@@ -1,0 +1,469 @@
+"use client"
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Calendar,
+  MessageSquare,
+  Briefcase,
+  User,
+  Send,
+  Search,
+  MapPin,
+  Clock,
+  Building,
+  Mail,
+  Phone,
+  Link as LinkIcon,
+  FileText
+} from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { auth, db } from '@/firebase/config';
+import { ref, push, set, onValue } from 'firebase/database';
+
+const StudentDashboard = () => {
+  const [events, setEvents] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const [alumni, setAlumni] = useState([]);
+  const [selectedAlumni, setSelectedAlumni] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [applicationData, setApplicationData] = useState({
+    coverLetter: '',
+    resume: null
+  });
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
+
+    // Fetch alumni users
+    const alumniRef = ref(db, 'users');
+    const alumniUnsubscribe = onValue(alumniRef, (snapshot) => {
+      try {
+        const data = snapshot.val();
+        if (data) {
+          const alumniList = Object.entries(data)
+            .map(([id, user]) => ({ id, ...user }))
+            .filter(user => user.userType === 'alumni');
+          setAlumni(alumniList);
+        }
+      } catch (err) {
+        console.error('Error fetching alumni:', err);
+        setError('Failed to load alumni');
+      }
+    });
+
+    // Fetch events
+    const eventsRef = ref(db, 'events');
+    const eventsUnsubscribe = onValue(eventsRef, (snapshot) => {
+      try {
+        const data = snapshot.val();
+        if (data) {
+          const eventsList = Object.entries(data).map(([id, event]) => ({
+            id,
+            ...event
+          }));
+          setEvents(eventsList);
+        }
+      } catch (err) {
+        console.error('Error fetching events:', err);
+        setError('Failed to load events');
+      }
+    });
+
+    // Fetch jobs
+    const jobsRef = ref(db, 'jobs');
+    const jobsUnsubscribe = onValue(jobsRef, (snapshot) => {
+      try {
+        const data = snapshot.val();
+        if (data) {
+          const jobsList = Object.entries(data).map(([id, job]) => ({
+            id,
+            ...job
+          }));
+          setJobs(jobsList);
+        }
+      } catch (err) {
+        console.error('Error fetching jobs:', err);
+        setError('Failed to load jobs');
+      }
+    });
+
+    setLoading(false);
+
+    return () => {
+      alumniUnsubscribe();
+      eventsUnsubscribe();
+      jobsUnsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedAlumni || !auth.currentUser) return;
+
+    // Fetch chat messages
+    const chatId = [auth.currentUser.uid, selectedAlumni.id].sort().join('-');
+    const messagesRef = ref(db, `chats/${chatId}/messages`);
+    
+    const messagesUnsubscribe = onValue(messagesRef, (snapshot) => {
+      try {
+        const data = snapshot.val();
+        if (data) {
+          const messagesList = Object.entries(data)
+            .map(([id, message]) => ({ id, ...message }))
+            .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+          setMessages(messagesList);
+        } else {
+          setMessages([]);
+        }
+      } catch (err) {
+        console.error('Error fetching messages:', err);
+        setError('Failed to load messages');
+      }
+    });
+
+    return () => messagesUnsubscribe();
+  }, [selectedAlumni]);
+
+    const sendMessage = async () => {
+    if (!newMessage.trim() || !selectedAlumni || !auth.currentUser) return;
+
+    try {
+      const chatId = [auth.currentUser.uid, selectedAlumni.id].sort().join('-');
+      const messagesRef = ref(db, `chats/${chatId}/messages`);
+      const newMessageRef = push(messagesRef);
+
+      await set(newMessageRef, {
+        content: newMessage.trim(),
+        senderId: auth.currentUser.uid,
+        receiverId: selectedAlumni.id,
+        timestamp: new Date().toISOString()
+      });
+
+      setNewMessage('');
+    } catch (err) {
+      console.error('Error sending message:', err);
+      setError('Failed to send message');
+    }
+  };
+
+  const filteredAlumni = alumni.filter(alum => 
+    alum.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    alum.company?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    alum.department?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-white p-6 flex items-center justify-center">
+        <div className="animate-pulse">Loading...</div>
+      </div>
+    );
+  }
+ const handleJobApplication = async (jobId) => {
+    if (!auth.currentUser) return;
+
+    try {
+      const applicationRef = ref(db, `applications/${jobId}/${auth.currentUser.uid}`);
+      await set(applicationRef, {
+        ...applicationData,
+        userId: auth.currentUser.uid,
+        jobId,
+        status: 'pending',
+        timestamp: new Date().toISOString()
+      });
+
+      setApplicationData({ coverLetter: '', resume: null });
+      alert('Application submitted successfully!');
+    } catch (err) {
+      console.error('Error submitting application:', err);
+      setError('Failed to submit application');
+    }
+  };
+  return (
+    <div className="min-h-screen bg-gray-950 text-white p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+            Student Dashboard
+          </h1>
+        </div>
+
+        {error && (
+          <div className="bg-red-500/10 border border-red-500 text-red-500 p-4 rounded-lg mb-6 animate-fade-in">
+            {error}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Alumni List */}
+          <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                <User className="w-5 h-5 text-blue-400" />
+               <h1 className='text-white'>Alumni Network</h1>
+              </CardTitle>
+              <div className="relative mt-4">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-white" />
+                <Input
+                  placeholder="Search alumni..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 bg-gray-800/50 border-gray-700 focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[500px] pr-4">
+                {filteredAlumni.map((alum) => (
+                  <div
+                    key={alum.id}
+                    className={`p-4 cursor-pointer transition-all duration-200 hover:bg-gray-800/70 rounded-lg mb-2 ${
+                      selectedAlumni?.id === alum.id ? 'bg-blue-600/20 border border-blue-500/50' : ''
+                    }`}
+                    onClick={() => setSelectedAlumni(alum)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center">
+                        <User className="w-6 h-6 text-gray-400" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-white">{alum.name}</h3>
+                        <p className="text-sm text-gray-400 flex items-center gap-1">
+                          <Building className="w-3 h-3" />
+                          {alum.company} - {alum.designation}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+
+          {/* Chat Window */}
+          <Card className="lg:col-span-2 bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+            <CardHeader className="border-b border-gray-800">
+              {selectedAlumni ? (
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center">
+                    <User className="w-7 h-7 text-gray-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl font-semibold">{selectedAlumni.name}</CardTitle>
+                    <p className="text-sm text-gray-400">{selectedAlumni.designation} at {selectedAlumni.company}</p>
+                  </div>
+                </div>
+              ) : (
+                <CardTitle className="text-xl font-semibold text-white">Select an alumni to chat</CardTitle>
+              )}
+            </CardHeader>
+            <CardContent>
+              {selectedAlumni ? (
+                <>
+                  <ScrollArea className="h-[400px] mb-4 p-4">
+                    {messages.map((message) => (
+                      <div
+                        key={message.id}
+                        className={`mb-4 flex ${
+                          message.senderId === auth.currentUser?.uid
+                            ? 'justify-end'
+                            : 'justify-start'
+                        }`}
+                      >
+                        <div className="max-w-[70%]">
+                          <div
+                            className={`p-3 rounded-2xl ${
+                              message.senderId === auth.currentUser?.uid
+                                ? 'bg-blue-600 text-white rounded-br-none'
+                                : 'bg-gray-800 text-white rounded-bl-none'
+                            }`}
+                          >
+                            {message.content}
+                          </div>
+                          <div className={`text-xs text-gray-500 mt-1 ${
+                            message.senderId === auth.currentUser?.uid ? 'text-right' : 'text-left'
+                          }`}>
+                            {new Date(message.timestamp).toLocaleTimeString([], { 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </ScrollArea>
+                 <div className="flex gap-2 p-2 bg-gray-800/50 rounded-lg">
+        <Input
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          placeholder="Type your message..."
+          className="bg-transparent border-none focus:ring-0 placeholder-gray-500 text-white"
+          onKeyPress={(e) => {
+            if (e.key === 'Enter') {
+              sendMessage();
+            }
+          }}
+        />
+        <Button 
+          onClick={sendMessage}
+          className="bg-blue-600 hover:bg-blue-700 transition-colors"
+        >
+          <Send className="w-4 h-4" />
+        </Button>
+      </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[500px] text-gray-400">
+                  <MessageSquare className="w-16 h-16 mb-4 text-gray-600" />
+                  <p className="text-lg">Select an alumni from the list to start chatting</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Events and Jobs Sections */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          {/* Events Section */}
+          <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-purple-400" />
+                           <h1 className='text-white'> Upcoming Events</h1>
+
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[400px] pr-4">
+                {events.map((event) => (
+                  <div key={event.id} className="mb-4 p-4 bg-gray-800/50 rounded-lg hover:bg-gray-800 transition-colors">
+                    <h3 className="font-medium text-lg mb-2">{event.name}</h3>
+                    <p className="text-gray-400 mb-3">{event.description}</p>
+                    <div className="flex flex-wrap gap-4">
+                      <div className="flex items-center text-gray-300">
+                        <Calendar className="w-4 h-4 mr-2 text-purple-400" />
+                        <span>{event.date}</span>
+                      </div>
+                      <div className="flex items-center text-gray-300">
+                        <Clock className="w-4 h-4 mr-2 text-purple-400" />
+                        <span>{event.time}</span>
+                      </div>
+                    </div>
+                    {event.meetLink && (
+                      <Button
+                        variant="link"
+                        className="text-purple-400 hover:text-purple-300 p-0 mt-2"
+                        onClick={() => window.open(event.meetLink, '_blank')}
+                      >
+                        <LinkIcon className="w-4 h-4 mr-2" />
+                        Join Meeting
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+
+          {/* Jobs Section */}
+           <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="text-xl font-semibold flex items-center gap-2">
+            <Briefcase className="w-5 h-5 text-green-400" />
+            <h1 className='text-white'>Job Opportunities</h1>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-[400px] pr-4">
+            {jobs.map((job) => (
+              <div key={job.id} className="mb-4 p-4 bg-gray-800/50 rounded-lg hover:bg-gray-800 transition-colors">
+                <h3 className="font-medium text-lg mb-2 text-white">{job.title}</h3>
+                <div className="flex items-center text-gray-300 mb-2">
+                  <Building className="w-4 h-4 mr-2 text-green-400" />
+                  <span className="text-white">{job.company}</span>
+                </div>
+                <p className="text-gray-200 mb-3">{job.description}</p>
+                <div className="flex flex-wrap gap-4 text-sm mb-4">
+                  <div className="flex items-center text-white">
+                    <MapPin className="w-4 h-4 mr-2 text-green-400" />
+                    {job.location}
+                  </div>
+                  <div className="flex items-center text-white">
+                    <Clock className="w-4 h-4 mr-2 text-green-400" />
+                    {job.type}
+                  </div>
+                </div>
+                
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button className="bg-green-600 hover:bg-green-700 transition-colors">
+                      <FileText className="w-4 h-4 mr-2" />
+                      Apply Now
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-gray-900 text-white border-gray-800">
+                    <DialogHeader>
+                      <DialogTitle className="text-xl font-semibold mb-4">
+                        Apply for {job.title} at {job.company}
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Cover Letter</label>
+                        <Textarea
+                          value={applicationData.coverLetter}
+                          onChange={(e) => setApplicationData({
+                            ...applicationData,
+                            coverLetter: e.target.value
+                          })}
+                          placeholder="Write your cover letter here..."
+                          className="bg-gray-800 border-gray-700 text-white min-h-[200px]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Resume</label>
+                        <Input
+                          type="file"
+                          onChange={(e) => setApplicationData({
+                            ...applicationData,
+                            resume: e.target.files[0]
+                          })}
+                          className="bg-gray-800 border-gray-700 text-white"
+                          accept=".pdf,.doc,.docx"
+                        />
+                      </div>
+                      <Button 
+                        className="w-full bg-green-600 hover:bg-green-700 transition-colors"
+                        onClick={() => handleJobApplication(job.id)}
+                      >
+                        Submit Application
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            ))}
+          </ScrollArea>
+        </CardContent>
+      </Card>
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default StudentDashboard;
