@@ -10,14 +10,13 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword ,GoogleAuthP
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyCQyUmx9ObfnAln-gzAPBlzJ-9c8GklifM",
-  authDomain: "honest-chain.firebaseapp.com",
-  databaseURL: "https://honest-chain-default-rtdb.firebaseio.com",
-  projectId: "honest-chain",
-  storageBucket: "honest-chain.appspot.com",
-  messagingSenderId: "867934806054",
-  appId: "1:867934806054:web:a3a8728425c805f54d86e7",
-  measurementId: "G-B2XTP9NGRY"
+ apiKey: "AIzaSyB3hIfkPG1nUENcB_cB1LpG3AGNXxy8b2A",
+  authDomain: "pavan-ce10b.firebaseapp.com",
+  projectId: "pavan-ce10b",
+  storageBucket: "pavan-ce10b.firebasestorage.app",
+  messagingSenderId: "159960083047",
+  appId: "1:159960083047:web:e6eaa2caf7d554662402c2",
+  measurementId: "G-3XD6ELTL0J"
 };
 
 // Initialize Firebase
