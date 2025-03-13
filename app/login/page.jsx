@@ -111,7 +111,11 @@ const AuthPage = () => {
           setLoading(false);
           return;
         }
-
+if (!formData.email.endsWith("@anits.edu.in")) {
+    setError("Email must be from anits.edu.in domain");
+    setLoading(false);
+    return;
+}
         if (!formData.department) {
           setError('Department is required');
           setLoading(false);
