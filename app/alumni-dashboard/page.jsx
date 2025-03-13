@@ -1,6 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import TopApplicantsProfile from './top';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer 
+} from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,18 +18,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
-  Calendar, 
-  Clock, 
-  Link as LinkIcon, 
-  Briefcase, 
-  Plus, 
-  Image,
-  MessageSquare,
-  Send,
-  User,
-  Bell
-} from 'lucide-react';
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -27,21 +25,173 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Calendar,
+  MessageSquare,
+  Briefcase,
+  User,
+  Send,
+  Plus,
+  Bell,
+  Hash,
+  LinkIcon,
+  Clock,
+  Brain,
+  Code,
+  Database,
+  Network,
+  Cpu
+} from 'lucide-react';
 import { auth, db } from '@/firebase/config';
-import { ref, push, set, onValue, remove } from 'firebase/database';
+import { 
+  ref, 
+  push, 
+  set, 
+  onValue, 
+  remove 
+} from 'firebase/database';
 
+// Domain Constants
+const DOMAINS = [
+  { id: 'ai', name: 'AI & Machine Learning', icon: Brain },
+  { id: 'web', name: 'Web Development', icon: Code },
+  { id: 'data', name: 'Data Science', icon: Database },
+  { id: 'cloud', name: 'Cloud Computing', icon: Network },
+  { id: 'systems', name: 'Systems Design', icon: Cpu }
+];
+
+// Job Applications Tracker Component
+const JobApplicationsTracker = ({ jobs }) => {
+  const [applications, setApplications] = useState([]);
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
+
+    const applicationsRef = ref(db, 'jobApplications');
+    const unsubscribe = onValue(applicationsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const applicationsArray = Object.entries(data)
+          .map(([id, application]) => ({
+            id,
+            ...application
+          }));
+        
+        const applicationCounts = jobs.map(job => ({
+          jobTitle: job.title,
+          totalApplications: applicationsArray.filter(app => app.jobId === job.id).length,
+          atsScore: calculateATSScore()
+        }));
+
+        setApplications(applicationCounts);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [jobs]);
+
+  const calculateATSScore = () => {
+    return Math.floor(Math.random() * 50) + 50;
+  };
+
+  const applyToJob = async (jobId) => {
+    if (!auth.currentUser) return;
+
+    try {
+      const applicationsRef = ref(db, 'jobApplications');
+      const newApplicationRef = push(applicationsRef);
+      
+      await set(newApplicationRef, {
+        jobId,
+        userId: auth.currentUser.uid,
+        timestamp: new Date().toISOString(),
+        coverLetter: '',
+        status: 'pending'
+      });
+    } catch (error) {
+      console.error('Error applying to job:', error);
+    }
+  };
+
+  return (
+    <Card className="bg-gray-900 border-gray-800">
+      <CardHeader>
+        <CardTitle className="text-white">Job Applications Overview</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={applications}>
+            <XAxis 
+              dataKey="jobTitle" 
+              stroke="#888" 
+              tick={{ fill: 'white' }} 
+            />
+            <YAxis 
+              stroke="#888" 
+              tick={{ fill: 'white' }} 
+            />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: '#111', 
+                color: 'white',
+                border: '1px solid #333'
+              }}
+              labelStyle={{ color: 'white' }}
+            />
+            <Legend />
+            <Bar 
+              dataKey="totalApplications" 
+              fill="#3B82F6" 
+              name="Total Applications" 
+            />
+            <Bar 
+              dataKey="atsScore" 
+              fill="#10B981" 
+              name="ATS Score" 
+            />
+          </BarChart>
+        </ResponsiveContainer>
+        
+        <div className="mt-4">
+          {jobs.map((job) => (
+            <div 
+              key={job.id} 
+              className="flex justify-between items-center bg-gray-800 p-3 rounded-lg mb-2"
+            >
+              <div>
+                <h3 className="text-white font-semibold">{job.title}</h3>
+                <p className="text-gray-400">{job.company}</p>
+              </div>
+         
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Main Alumni Dashboard Component
 const AlumniDashboard = () => {
   const [events, setEvents] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+  const [chats, setChats] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [selectedDomain, setSelectedDomain] = useState('');
+  const [domainMessages, setDomainMessages] = useState([]);
+  const [newDomainMessage, setNewDomainMessage] = useState('');
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [newMessage, setNewMessage] = useState('');
+  const [unreadCount, setUnreadCount] = useState(0);
+
   const [newEvent, setNewEvent] = useState({
     name: '',
     description: '',
     date: '',
     time: '',
-    meetLink: '',
+    meetLink: 'http://localhost:3000/zoom',
     bannerUrl: ''
   });
 
@@ -53,75 +203,79 @@ const AlumniDashboard = () => {
     location: '',
     type: 'Full-time'
   });
-    const [chats, setChats] = useState([]);
-  const [messages, setMessages] = useState([]);
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [newMessage, setNewMessage] = useState('');
-  const [unreadCount, setUnreadCount] = useState(0);
 
+  // Domain Selection Handler
+  const handleDomainSelect = (domainId) => {
+    setSelectedDomain(selectedDomain === domainId ? '' : domainId);
+  };
+
+  // Send Domain Message
+  const sendDomainMessage = async () => {
+    if (!newDomainMessage.trim() || !selectedDomain || !auth.currentUser) return;
+
+    try {
+      const domainMessagesRef = ref(db, `domainChats/${selectedDomain}`);
+      const newMessageRef = push(domainMessagesRef);
+
+      await set(newMessageRef, {
+        content: newDomainMessage.trim(),
+        senderId: auth.currentUser.uid,
+        senderName: auth.currentUser.displayName || 'Anonymous',
+        timestamp: new Date().toISOString()
+      });
+
+      setNewDomainMessage('');
+    } catch (err) {
+      console.error('Error sending domain message:', err);
+      setError('Failed to send message');
+    }
+  };
+
+  // Fetch Data Effects
   useEffect(() => {
     if (!auth.currentUser) return;
 
-    // Fetch all chats for the alumni
+    // Fetch Domain Messages
+    if (selectedDomain) {
+      const domainMessagesRef = ref(db, `domainChats/${selectedDomain}`);
+      const unsubscribe = onValue(domainMessagesRef, (snapshot) => {
+        const data = snapshot.val();
+        const messagesList = data 
+          ? Object.entries(data)
+              .map(([id, message]) => ({ id, ...message }))
+              .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+          : [];
+        setDomainMessages(messagesList);
+      });
+      return () => unsubscribe();
+    }
+  }, [selectedDomain]);
+
+  // Chats and Messages Fetching
+  useEffect(() => {
+    if (!auth.currentUser) return;
+
     const chatsRef = ref(db, 'chats');
     const chatsUnsubscribe = onValue(chatsRef, (snapshot) => {
-      try {
-        const data = snapshot.val();
-        if (data) {
-          const chatsList = Object.entries(data)
+      const data = snapshot.val();
+      const chatsList = data 
+        ? Object.entries(data)
             .filter(([chatId]) => chatId.includes(auth.currentUser.uid))
             .map(([id, chat]) => ({
               id,
               ...chat,
               unread: chat.lastMessage?.receiverId === auth.currentUser.uid && !chat.lastMessage?.read
-            }));
-          setChats(chatsList);
-          setUnreadCount(chatsList.filter(chat => chat.unread).length);
-        }
-      } catch (err) {
-        console.error('Error fetching chats:', err);
-        setError('Failed to load chats');
-      }
+            }))
+        : [];
+      
+      setChats(chatsList);
+      setUnreadCount(chatsList.filter(chat => chat.unread).length);
     });
 
-    return () => {
-      chatsUnsubscribe();
-    };
+    return () => chatsUnsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (!selectedChat || !auth.currentUser) return;
-
-    // Fetch messages for selected chat
-    const messagesRef = ref(db, `chats/${selectedChat.id}/messages`);
-    const messagesUnsubscribe = onValue(messagesRef, (snapshot) => {
-      try {
-        const data = snapshot.val();
-        if (data) {
-          const messagesList = Object.entries(data)
-            .map(([id, message]) => ({
-              id,
-              ...message
-            }))
-            .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-          setMessages(messagesList);
-        } else {
-          setMessages([]);
-        }
-      } catch (err) {
-        console.error('Error fetching messages:', err);
-      }
-    });
-
-    // Mark messages as read
-    if (selectedChat.unread) {
-      const chatRef = ref(db, `chats/${selectedChat.id}/lastMessage`);
-      set(chatRef, { ...selectedChat.lastMessage, read: true });
-    }
-
-    return () => messagesUnsubscribe();
-  }, [selectedChat]);
-
+  // Message Sending
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedChat || !auth.currentUser) return;
 
@@ -137,7 +291,6 @@ const AlumniDashboard = () => {
 
       await set(newMessageRef, messageData);
       
-      // Update last message
       const chatRef = ref(db, `chats/${selectedChat.id}/lastMessage`);
       await set(chatRef, { ...messageData, read: false });
 
@@ -148,59 +301,38 @@ const AlumniDashboard = () => {
     }
   };
 
-
+  // Data Fetching
   useEffect(() => {
     if (!auth.currentUser) return;
 
-    // Fetch events
     const eventsRef = ref(db, 'events');
+    const jobsRef = ref(db, 'jobs');
+
     const eventsUnsubscribe = onValue(eventsRef, (snapshot) => {
-      try {
-        const data = snapshot.val();
-        if (data) {
-          const eventsArray = Object.entries(data).map(([id, event]) => ({
-            id,
-            ...event
-          }));
-          setEvents(eventsArray);
-        } else {
-          setEvents([]);
-        }
-      } catch (err) {
-        console.error('Error fetching events:', err);
-        setError('Failed to load events');
-      }
+      const data = snapshot.val();
+      const eventsArray = data 
+        ? Object.entries(data).map(([id, event]) => ({ id, ...event }))
+        : [];
+      setEvents(eventsArray);
     });
 
-    // Fetch jobs
-    const jobsRef = ref(db, 'jobs');
     const jobsUnsubscribe = onValue(jobsRef, (snapshot) => {
-      try {
-        const data = snapshot.val();
-        if (data) {
-          const jobsArray = Object.entries(data).map(([id, job]) => ({
-            id,
-            ...job
-          }));
-          setJobs(jobsArray);
-        } else {
-          setJobs([]);
-        }
-      } catch (err) {
-        console.error('Error fetching jobs:', err);
-        setError('Failed to load jobs');
-      }
+      const data = snapshot.val();
+      const jobsArray = data 
+        ? Object.entries(data).map(([id, job]) => ({ id, ...job }))
+        : [];
+      setJobs(jobsArray);
     });
 
     setLoading(false);
 
-    // Cleanup subscriptions
     return () => {
       eventsUnsubscribe();
       jobsUnsubscribe();
     };
   }, []);
 
+  // Add/Delete Handlers
   const handleAddEvent = async () => {
     try {
       const eventsRef = ref(db, 'events');
@@ -280,26 +412,29 @@ const AlumniDashboard = () => {
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Alumni Dashboard</h1>
         
-        {error && (
-          <div className="bg-red-500/10 border border-red-500 text-red-500 p-4 rounded-lg mb-6">
-            {error}
-          </div>
-        )}
+        {/* Notification Bell */}
         <div className="relative m-4">
-            <Bell className="w-6 h-6 cursor-pointer" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                {unreadCount}
-              </span>
-            )}
-          </div>
+          <Bell className="w-6 h-6 cursor-pointer" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              {unreadCount}
+            </span>
+          )}
         </div>
 
+        {/* Error Handling */}
         {error && (
           <div className="bg-red-500/10 border border-red-500 text-red-500 p-4 rounded-lg mb-6">
             {error}
           </div>
         )}
+<div className="m-12">
+  <TopApplicantsProfile />
+</div>
+        {/* Job Applications Tracker */}
+        <div className="m-12">
+          <JobApplicationsTracker jobs={jobs} />
+        </div>
 
         {/* Messages Section */}
         <div className="mb-12">
@@ -417,6 +552,94 @@ const AlumniDashboard = () => {
               </CardContent>
             </Card>
           </div>
+
+            <div className="mb-6">
+          <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                <Hash className="w-5 h-5 text-blue-400" />
+                Domain Chats
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
+                {DOMAINS.map(domain => {
+                  const DomainIcon = domain.icon;
+                  return (
+                    <Button 
+                      key={domain.id}
+                      className={`w-full justify-start gap-2 ${
+                        selectedDomain === domain.id ? 'bg-blue-600' : 'bg-gray-800'
+                      }`}
+                      onClick={() => handleDomainSelect(domain.id)}
+                    >
+                      <DomainIcon className="w-4 h-4" />
+                      {domain.name}
+                    </Button>
+                  );
+                })}
+              </div>
+
+              {selectedDomain && (
+                <div className="mt-4">
+                  <ScrollArea className="h-[300px] pr-4">
+                    {domainMessages.map((message) => (
+                      <div
+                        key={message.id}
+                        className={`mb-4 flex ${
+                          message.senderId === auth.currentUser?.uid
+                            ? 'justify-end'
+                            : 'justify-start'
+                        }`}
+                      >
+                        <div className="max-w-[70%]">
+                          <div className="text-xs text-gray-400 mb-1">
+                            {message.senderName}
+                          </div>
+                          <div
+                            className={`p-3 rounded-2xl ${
+                              message.senderId === auth.currentUser?.uid
+                                ? 'bg-blue-600 text-white rounded-br-none'
+                                : 'bg-gray-800 text-white rounded-bl-none'
+                            }`}
+                          >
+                            {message.content}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {new Date(message.timestamp).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </ScrollArea>
+                  
+                  <div className="flex gap-2 mt-4 p-2 bg-gray-800/50 rounded-lg">
+                    <Input
+                      value={newDomainMessage}
+                      onChange={(e) => setNewDomainMessage(e.target.value)}
+                      placeholder={`Message #${selectedDomain}...`}
+                      className="bg-transparent border-none focus:ring-0 placeholder-gray-500 text-white"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          sendDomainMessage();
+                        }
+                      }}
+                    />
+                    <Button 
+                      onClick={sendDomainMessage}
+                      className="bg-blue-600 hover:bg-blue-700 transition-colors"
+                    >
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
         {/* Events Section */}
         <div className="m-12 ">
           <div className="flex justify-between items-center mb-6">
@@ -648,6 +871,7 @@ const AlumniDashboard = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };
