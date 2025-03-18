@@ -51,6 +51,7 @@ import {
   remove 
 } from 'firebase/database';
 import FeedbackHistory from '../zoom/feedback';
+import ApplicantDashboard from './job';
 
 // Domain Constants
 const DOMAINS = [
@@ -271,34 +272,44 @@ const ChatContainer = () => {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (!selectedChat || !auth.currentUser) return;
-    
-const messagesRef = ref(db, `chats/${selectedChat.id}/messages`);
-    const unsubscribe = onValue(messagesRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const messagesList = Object.entries(data)
-          .map(([id, message]) => ({
-            id,
-            ...message
-          }))
-          .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-        setMessages(messagesList);
-      } else {
-        setMessages([]);
-      }
-    });
 
-    // Mark messages as read
-    if (selectedChat.unread) {
-      const chatRef = ref(db, `chats/${selectedChat.id}/lastMessage`);
-      set(chatRef, { ...selectedChat.lastMessage, read: true });
+
+useEffect(() => {
+  if (!selectedChat) return;
+
+  const messagesRef = ref(db, `chats/${selectedChat.id}/messages`);
+  const unsubscribe = onValue(messagesRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      const messagesList = Object.entries(data)
+        .map(([id, message]) => ({
+          id,
+          name: message.name, // Include name
+          content: message.content, // Include content
+          ...message
+        }))
+        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      setMessages(messagesList);
+    } else {
+      setMessages([]);
     }
+  });
 
-    return () => unsubscribe();
-  }, [selectedChat]);
+  // Mark messages as read
+  if (selectedChat.unread) {
+    const chatRef = ref(db, `chats/${selectedChat.id}/lastMessage`);
+    set(chatRef, { ...selectedChat.lastMessage, read: true });
+  }
 
+  return () => unsubscribe();
+}, [selectedChat]);
+
+    
+
+function getNameFromEmail(email) {
+    if (!email.includes("@")) return null; // Validate email format
+    return email.split("@")[0]; // Extract part before '@'
+}
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedChat || !auth.currentUser) return;
     
@@ -306,6 +317,7 @@ const messagesRef = ref(db, `chats/${selectedChat.id}/messages`);
       const messagesRef = ref(db, `chats/${selectedChat.id}/messages`);
       const newMessageRef = push(messagesRef);
       const messageData = {
+        name:getNameFromEmail(auth.currentUser.email),
         content: newMessage.trim(),
         senderId: auth.currentUser.uid,
         receiverId: selectedChat.id.replace(auth.currentUser.uid, '').replace('-', ''),
@@ -494,6 +506,10 @@ const AlumniDashboard = () => {
 
   // Send Domain Message
   const sendDomainMessage = async () => {
+    function getNameFromEmail(email) {
+    if (!email.includes("@")) return null; // Validate email format
+    return email.split("@")[0]; // Extract part before '@'
+}
     if (!newDomainMessage.trim() || !selectedDomain || !auth.currentUser) return;
 
     try {
@@ -503,7 +519,7 @@ const AlumniDashboard = () => {
       await set(newMessageRef, {
         content: newDomainMessage.trim(),
         senderId: auth.currentUser.uid,
-        senderName: auth.currentUser.displayName || 'Anonymous',
+        senderName: getNameFromEmail(auth.currentUser.email),
         timestamp: new Date().toISOString()
       });
 
@@ -689,6 +705,7 @@ const AlumniDashboard = () => {
   if (loading) {
     return <div className="min-h-screen bg-black text-white p-6">Loading...</div>;
   }
+  
 
   return (
     <div className="min-h-screen bg-black text-white p-6">
@@ -711,9 +728,7 @@ const AlumniDashboard = () => {
             {error}
           </div>
         )}
-<div className="m-12">
-  <TopApplicantsProfile />
-</div>
+
       
 
         {/* Messages Section */}
@@ -936,6 +951,7 @@ const AlumniDashboard = () => {
             ))}
           </div>
         </div>
+        <ApplicantDashboard/>
        <FeedbackHistory/>
         {/* Jobs Section */}
         <div className="m-12">

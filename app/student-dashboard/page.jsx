@@ -54,7 +54,7 @@ const StudentDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selectedDomain, setSelectedDomain] = useState('');
+  const [selectedDomain, setSelectedDomain] = useState('ai');
   const [domainMessages, setDomainMessages] = useState([]);
   const [newDomainMessage, setNewDomainMessage] = useState('');
   const [applicationData, setApplicationData] = useState({
@@ -247,6 +247,12 @@ useEffect(() => {
   };
 
   const sendDomainMessage = async () => {
+    function getNameFromEmail(email) {
+    if (!email.includes("@")) return null; // Validate email format
+    return email.split("@")[0]; // Extract part before '@'
+}
+
+
     if (!newDomainMessage.trim() || !selectedDomain || !auth.currentUser) return;
 
     try {
@@ -256,7 +262,7 @@ useEffect(() => {
       await set(newMessageRef, {
         content: newDomainMessage.trim(),
         senderId: auth.currentUser.uid,
-        senderName: auth.currentUser.displayName || 'Anonymous',
+        senderName: getNameFromEmail(auth.currentUser.email),
         timestamp: new Date().toISOString()
       });
 
@@ -272,12 +278,12 @@ useEffect(() => {
     if (!auth.currentUser) return;
 
     try {
-      const applicationRef = ref(db, `applications/${jobId}/${auth.currentUser.uid}`);
+      const applicationRef = ref(db, `jobApplications/${jobId}`);
       await set(applicationRef, {
         ...applicationData,
-        userId: auth.currentUser.uid,
+        userId: auth.currentUser.email,
         jobId,
-        status: 'pending',
+        status: auth.currentUser.email,
         timestamp: new Date().toISOString()
       });
 
