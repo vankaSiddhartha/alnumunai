@@ -50,6 +50,7 @@ import {
   onValue, 
   remove 
 } from 'firebase/database';
+import FeedbackHistory from '../zoom/feedback';
 
 // Domain Constants
 const DOMAINS = [
@@ -59,6 +60,288 @@ const DOMAINS = [
   { id: 'cloud', name: 'Cloud Computing', icon: Network },
   { id: 'systems', name: 'Systems Design', icon: Cpu }
 ];
+// Chat Message Component
+const ChatMessage = ({ message, currentUser }) => {
+  const isSender = message.senderId === currentUser?.uid;
+
+  return (
+    <div className={`mb-4 flex ${isSender ? 'justify-end' : 'justify-start'}`}>
+      <div className="max-w-[70%]">
+        <div
+          className={`p-3 rounded-2xl ${
+            isSender
+              ? 'bg-blue-600 text-white rounded-br-none'
+              : 'bg-gray-800 text-white rounded-bl-none'
+          }`}
+        >
+          {message.content}
+        </div>
+        <div
+          className={`text-xs text-gray-500 mt-1 ${
+            isSender ? 'text-right' : 'text-left'
+          }`}
+        >
+          {message.timestamp
+            ? new Date(message.timestamp).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : 'Unknown time'}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Chat List Component
+const ChatList = ({ chats, selectedChat, onSelectChat }) => {
+  return (
+    <Card className="bg-gray-900 border-gray-800">
+      <CardHeader>
+        <CardTitle><h1 className="text-white">Recent Chats</h1></CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea className="h-[400px]">
+          {chats.map((chat) => (
+            <div
+              key={chat.id}
+              className={`p-4 cursor-pointer hover:bg-gray-800 rounded-lg mb-2 ${
+                selectedChat?.id === chat.id ? 'bg-gray-800' : ''
+              } ${chat.unread ? 'border-l-4 border-blue-500' : ''}`}
+              onClick={() => onSelectChat(chat)}
+            >
+              <div className="flex items-center gap-3">
+                <User className="w-8 h-8 text-gray-400" />
+                <div>
+                  <h3 className="font-medium text-white">
+                    {chat.studentName || 'Student'}
+                    {chat.unread && (
+                      <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
+                        New
+                      </span>
+                    )}
+                  </h3>
+                  <p className="text-sm text-gray-400">
+                    {chat.lastMessage?.content?.substring(0, 30)}...
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  );
+};
+// Chat Window Component
+const ChatWindow = ({ selectedChat, messages, newMessage, setNewMessage, sendMessage }) => {
+  return (
+    <Card className="lg:col-span-2 bg-gray-900 border-gray-800">
+      <CardHeader>
+        <CardTitle className="text-white">
+{selectedChat ? `Chat with ${selectedChat.studentName || 'Student'}` : 'Select a chat'}
+
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {selectedChat ? (
+          <>
+            <ScrollArea className="h-[400px] mb-4 p-4">
+              {messages.map((message) => (
+                <ChatMessage 
+                  key={message.id} 
+                  message={message} 
+                  currentUser={auth.currentUser} 
+                />
+              ))}
+            </ScrollArea>
+            <div className="flex gap-2 p-2 bg-gray-800 rounded-lg">
+              <Input
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Type your message..."
+                className="bg-transparent border-none focus:ring-0 text-white"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    sendMessage();
+                  }
+                }}
+              />
+              <Button 
+                onClick={sendMessage}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-[500px] text-gray-400">
+            <MessageSquare className="w-16 h-16 mb-4" />
+            <p>Select a chat to start messaging</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+// // Chat Window Component
+// const ChatWindow = ({ selectedChat, messages, newMessage, setNewMessage, sendMessage }) => {
+//   return (
+//     <Card className="lg:col-span-2 bg-gray-900 border-gray-800">
+//       <CardHeader>
+//         <CardTitle className="text-white">
+// <CardTitle className="text-white">
+//   {selectedChat ? `Chat with ${selectedChat.studentName || 'Student'}` : 'Select a chat'}
+// </CardTitle>
+
+//         </CardTitle>
+//       </CardHeader>
+//       <CardContent>
+//         {selectedChat ? (
+//           <>
+//             <ScrollArea className="h-[400px] mb-4 p-4">
+//               {messages.map((message) => (
+//                 <ChatMessage 
+//                   key={message.id} 
+//                   message={message} 
+//                   currentUser={auth.currentUser} 
+//                 />
+//               ))}
+//             </ScrollArea>
+//             <div className="flex gap-2 p-2 bg-gray-800 rounded-lg">
+//               <Input
+//                 value={newMessage}
+//                 onChange={(e) => setNewMessage(e.target.value)}
+//                 placeholder="Type your message..."
+//                 className="bg-transparent border-none focus:ring-0 text-white"
+//                 onKeyPress={(e) => {
+//                   if (e.key === 'Enter') {
+//                     sendMessage();
+//                   }
+//                 }}
+//               />
+//               <Button 
+//                 onClick={sendMessage}
+//                 className="bg-blue-600 hover:bg-blue-700"
+//               >
+//                 <Send className="w-4 h-4" />
+//               </Button>
+//             </div>
+//           </>
+//         ) : (
+//           <div className="flex flex-col items-center justify-center h-[500px] text-gray-400">
+//             <MessageSquare className="w-16 h-16 mb-4" />
+//             <p>Select a chat to start messaging</p>
+//           </div>
+//         )}
+//       </CardContent>
+//     </Card>
+//   );
+// };
+
+// Main Chat Container
+const ChatContainer = () => {
+  const [chats, setChats] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [newMessage, setNewMessage] = useState('');
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    
+    const chatsRef = ref(db, 'chats');
+    const unsubscribe = onValue(chatsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const chatsList = Object.entries(data)
+          .filter(([chatId]) => chatId.includes(auth.currentUser.uid))
+          .map(([id, chat]) => ({
+            id,
+            ...chat,
+            unread: chat.lastMessage?.receiverId === auth.currentUser.uid && !chat.lastMessage?.read
+          }));
+        setChats(chatsList);
+        setUnreadCount(chatsList.filter(chat => chat.unread).length);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedChat || !auth.currentUser) return;
+    
+const messagesRef = ref(db, `chats/${selectedChat.id}/messages`);
+    const unsubscribe = onValue(messagesRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const messagesList = Object.entries(data)
+          .map(([id, message]) => ({
+            id,
+            ...message
+          }))
+          .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        setMessages(messagesList);
+      } else {
+        setMessages([]);
+      }
+    });
+
+    // Mark messages as read
+    if (selectedChat.unread) {
+      const chatRef = ref(db, `chats/${selectedChat.id}/lastMessage`);
+      set(chatRef, { ...selectedChat.lastMessage, read: true });
+    }
+
+    return () => unsubscribe();
+  }, [selectedChat]);
+
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !selectedChat || !auth.currentUser) return;
+    
+    try {
+      const messagesRef = ref(db, `chats/${selectedChat.id}/messages`);
+      const newMessageRef = push(messagesRef);
+      const messageData = {
+        content: newMessage.trim(),
+        senderId: auth.currentUser.uid,
+        receiverId: selectedChat.id.replace(auth.currentUser.uid, '').replace('-', ''),
+        timestamp: new Date().toISOString()
+      };
+      
+      await set(newMessageRef, messageData);
+      const chatRef = ref(db, `chats/${selectedChat.id}/lastMessage`);
+      await set(chatRef, { ...messageData, read: false });
+      setNewMessage('');
+    } catch (err) {
+      console.error('Error sending message:', err);
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <ChatList 
+        chats={chats} 
+        selectedChat={selectedChat} 
+        onSelectChat={setSelectedChat} 
+      />
+      <ChatWindow 
+        selectedChat={selectedChat}
+        messages={messages}
+        newMessage={newMessage}
+        setNewMessage={setNewMessage}
+        sendMessage={sendMessage}
+      />
+    </div>
+  );
+};
+
+
+
+
 
 // Job Applications Tracker Component
 const JobApplicationsTracker = ({ jobs }) => {
@@ -431,10 +714,7 @@ const AlumniDashboard = () => {
 <div className="m-12">
   <TopApplicantsProfile />
 </div>
-        {/* Job Applications Tracker */}
-        <div className="m-12">
-          <JobApplicationsTracker jobs={jobs} />
-        </div>
+      
 
         {/* Messages Section */}
         <div className="mb-12">
@@ -443,115 +723,7 @@ const AlumniDashboard = () => {
             Messages
           </h2>
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Chat List */}
-            <Card className="bg-gray-900 border-gray-800">
-              <CardHeader>
-                <CardTitle><h1 className='text-white'>Recent Chats</h1></CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[400px]">
-                  {chats.map((chat) => (
-                    <div
-                      key={chat.id}
-                      className={`p-4 cursor-pointer hover:bg-gray-800 rounded-lg mb-2 ${
-                        selectedChat?.id === chat.id ? 'bg-gray-800' : ''
-                      } ${chat.unread ? 'border-l-4 border-blue-500' : ''}`}
-                      onClick={() => setSelectedChat(chat)}
-                    >
-                      <div className="flex items-center gap-3">
-                        <User className="w-8 h-8 text-gray-400" />
-                        <div>
-                          <h3 className="font-medium text-white">
-                            {chat.studentName || 'Student'}
-                            {chat.unread && (
-                              <span className="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
-                                New
-                              </span>
-                            )}
-                          </h3>
-                          <p className="text-sm text-gray-400">
-                            {chat.lastMessage?.content?.substring(0, 30)}...
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </ScrollArea>
-              </CardContent>
-            </Card>
-
-            {/* Chat Window */}
-            <Card className="lg:col-span-2 bg-gray-900 border-gray-800">
-              <CardHeader>
-                <CardTitle className = "text-white">
-                  {selectedChat ? `Chat with ${selectedChat.studentName || 'Student'}` : 'Select a chat'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {selectedChat ? (
-                  <>
-                    <ScrollArea className="h-[400px] mb-4 p-4">
-                      {messages.map((message) => (
-                        <div
-                          key={message.id}
-                          className={`mb-4 flex ${
-                            message.senderId === auth.currentUser?.uid
-                              ? 'justify-end'
-                              : 'justify-start'
-                          }`}
-                        >
-                          <div className="max-w-[70%]">
-                            <div
-                              className={`p-3 rounded-2xl ${
-                                message.senderId === auth.currentUser?.uid
-                                  ? 'bg-blue-600 text-white rounded-br-none'
-                                  : 'bg-gray-800 text-white rounded-bl-none'
-                              }`}
-                            >
-                              {message.content}
-                            </div>
-                            <div className={`text-xs text-gray-500 mt-1 ${
-                              message.senderId === auth.currentUser?.uid ? 'text-right' : 'text-left'
-                            }`}>
-                              {new Date(message.timestamp).toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </ScrollArea>
-                    <div className="flex gap-2 p-2 bg-gray-800 rounded-lg">
-                      <Input
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Type your message..."
-                        className="bg-transparent border-none focus:ring-0 text-white"
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter') {
-                            sendMessage();
-                          }
-                        }}
-                      />
-                      <Button 
-                        onClick={sendMessage}
-                        className="bg-blue-600 hover:bg-blue-700"
-                      >
-                        <Send className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-[500px] text-gray-400">
-                    <MessageSquare className="w-16 h-16 mb-4" />
-                    <p>Select a chat to start messaging</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+          <ChatContainer/>
 
             <div className="mb-6">
           <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
@@ -764,7 +936,7 @@ const AlumniDashboard = () => {
             ))}
           </div>
         </div>
-
+       <FeedbackHistory/>
         {/* Jobs Section */}
         <div className="m-12">
           <div className="flex justify-between items-center mb-6">

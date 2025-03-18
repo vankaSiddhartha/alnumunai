@@ -80,15 +80,11 @@ const TopApplicantsProfile = () => {
       score + (domainWeights[domain] || 1), 0) || 0;
   };
 const firstNames = [
-  'Alex', 'Sam', 'Jordan', 'Taylor', 'Riley', 
-  'Casey', 'Morgan', 'Avery', 'Quinn', 'Skylar',
-  'Cameron', 'Jamie', 'Charlie', 'Rowan', 'Parker'
+  'Pavan'
 ];
 
 const lastNames = [
-  'Singh', 'Kumar', 'Patel', 'Khan', 'Gupta', 
-  'Sharma', 'Mehta', 'Trivedi', 'Desai', 'Rajput',
-  'Malhotra', 'Chopra', 'Agarwal', 'Joshi', 'Mishra'
+  'Balla'
 ];
 
 const generateName = () => {

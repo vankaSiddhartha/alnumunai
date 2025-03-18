@@ -1,6 +1,7 @@
 "use client"
 import React, { useEffect, useState, useRef } from 'react';
 import { X, MessageSquare } from 'lucide-react';
+import Link from 'next/link';
 
 const MeetingRoom = () => {
   const [showFeedback, setShowFeedback] = useState(false);
@@ -149,20 +150,53 @@ const MeetingRoom = () => {
     };
   }, []);
 
-  const handleSubmitFeedback = async (e) => {
+  const handleSubmitFeedback = (e) => {
     e.preventDefault();
+    
+    // Validation
+    if (feedback.rating === 0 || !feedback.quality) {
+      alert('Please provide a rating and connection quality');
+      return;
+    }
 
     try {
       // Perform local sentiment analysis
       const result = analyzeSentiment(feedback);
       setSentimentResults(result);
       
-      // Optional: Send feedback to your backend
-      // const response = await fetch('your-api-endpoint', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(feedback),
-      // });
+      // Create feedback object with timestamp and analysis
+      const feedbackEntry = {
+        ...feedback,
+        sentiment: result,
+        timestamp: new Date().toISOString(),
+        meetingId: 'NextJSGroupMeeting'
+      };
+      
+      // Save to localStorage (with proper error handling)
+      try {
+        // Get existing feedback from localStorage
+        let existingFeedback = [];
+        const storedFeedback = localStorage.getItem('meetingFeedback');
+        
+        if (storedFeedback) {
+          existingFeedback = JSON.parse(storedFeedback);
+          // Ensure it's an array
+          if (!Array.isArray(existingFeedback)) {
+            existingFeedback = [];
+          }
+        }
+        
+        // Add new feedback
+        existingFeedback.push(feedbackEntry);
+        
+        // Save back to localStorage
+        localStorage.setItem('meetingFeedback', JSON.stringify(existingFeedback));
+        console.log('Feedback saved successfully:', feedbackEntry);
+      } catch (storageError) {
+        console.error('Error saving to localStorage:', storageError);
+        // Still show the analysis but inform about storage error
+        alert('Analysis completed, but there was an error saving your feedback.');
+      }
       
       // Don't reset the form immediately so user can see the results
       setTimeout(() => {
@@ -191,13 +225,20 @@ const MeetingRoom = () => {
       <div className="max-w-6xl mx-auto p-4">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">Group Meeting Room</h1>
-          <button
-            onClick={() => setShowFeedback(true)}
-            className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            <MessageSquare size={20} />
-            Provide Feedback
-          </button>
+          <div className="flex gap-3">
+            <Link href="/feedback-history">
+              <button className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors">
+                View Feedback History
+              </button>
+            </Link>
+            <button
+              onClick={() => setShowFeedback(true)}
+              className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              <MessageSquare size={20} />
+              Provide Feedback
+            </button>
+          </div>
         </div>
         <div id="meet" className="rounded-lg overflow-hidden shadow-lg"></div>
       </div>
