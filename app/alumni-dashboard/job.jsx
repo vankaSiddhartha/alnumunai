@@ -105,30 +105,17 @@ const ApplicantCard = ({ applicant }) => {
             />
             <h3 className="ml-3 font-bold text-white">{applicant.status}</h3>
           </div>
-          <div className="bg-white text-blue-800 rounded-full h-12 w-12 flex items-center justify-center font-bold text-lg">
-            {applicant.coverLetterCount}
-          </div>
+         
         </div>
       </div>
       <div className="p-4">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-600 font-medium flex items-center">
-            Cover Letters {getStrengthEmoji(applicant.coverLetterStrength)}
-          </span>
+    
           <span className="text-sm font-semibold">{applicant.coverLetterStrength}</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-3">
-          <div 
-            className={`h-2.5 rounded-full ${applicant.coverLetterStrength === "Very Strong" ? "bg-purple-600" : 
-              applicant.coverLetterStrength === "Strong" ? "bg-blue-600" :
-              applicant.coverLetterStrength === "Good" ? "bg-green-600" :
-              applicant.coverLetterStrength === "Basic" ? "bg-yellow-600" : "bg-gray-600"}`}
-            style={{ width: `${Math.min(applicant.coverLetterCount * 7, 100)}%` }}
-          ></div>
-        </div>
+   
         <div className="mt-3 flex justify-between">
           <span className="text-xs text-gray-500">ID: {applicant.userId.slice(0, 8)}...</span>
-          <span className="text-xs font-semibold text-blue-600">Score: {applicant.totalScore}</span>
         </div>
       </div>
     </div>

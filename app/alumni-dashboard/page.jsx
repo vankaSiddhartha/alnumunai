@@ -915,7 +915,9 @@ const AlumniDashboard = () => {
                       className="w-full h-48 object-cover rounded-t-lg"
                     />
                   )}
-                  <CardTitle className="text-xl font-semibold">{event.name}</CardTitle>
+                  <CardTitle className="text-xl font-semibold text-yellow-400">{event.name}</CardTitle>
+                      <div className="h-[2px] bg-gray-700 my-2" />
+
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-400 mb-4">{event.description}</p>
@@ -1024,7 +1026,7 @@ const AlumniDashboard = () => {
             {jobs.map((job) => (
               <Card key={job.id} className="bg-gray-900 border-gray-800">
                 <CardHeader>
-                  <CardTitle className="text-xl font-semibold">{job.title}</CardTitle>
+                  <CardTitle className="text-xl font-semibold text-yellow-400">{job.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center text-gray-300 mb-4">

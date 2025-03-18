@@ -2,6 +2,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { X, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
+import { auth, db } from '@/firebase/config';
+import { ref, push, set, onValue } from 'firebase/database';
 
 const MeetingRoom = () => {
   const [showFeedback, setShowFeedback] = useState(false);
@@ -172,30 +174,26 @@ const MeetingRoom = () => {
         meetingId: 'NextJSGroupMeeting'
       };
       
-      // Save to localStorage (with proper error handling)
+      // Save to Firebase
       try {
-        // Get existing feedback from localStorage
-        let existingFeedback = [];
-        const storedFeedback = localStorage.getItem('meetingFeedback');
+        // Create reference to the feedback location in your database
+        const feedbackRef = ref(db, 'meetingFeedback');
         
-        if (storedFeedback) {
-          existingFeedback = JSON.parse(storedFeedback);
-          // Ensure it's an array
-          if (!Array.isArray(existingFeedback)) {
-            existingFeedback = [];
-          }
-        }
+        // Push creates a new child with a unique key and returns a reference to it
+        const newFeedbackRef = push(feedbackRef);
         
-        // Add new feedback
-        existingFeedback.push(feedbackEntry);
-        
-        // Save back to localStorage
-        localStorage.setItem('meetingFeedback', JSON.stringify(existingFeedback));
-        console.log('Feedback saved successfully:', feedbackEntry);
-      } catch (storageError) {
-        console.error('Error saving to localStorage:', storageError);
-        // Still show the analysis but inform about storage error
-        alert('Analysis completed, but there was an error saving your feedback.');
+        // Set the data at the new reference
+        set(newFeedbackRef, feedbackEntry)
+          .then(() => {
+            console.log('Feedback saved successfully to Firebase:', feedbackEntry);
+          })
+          .catch((firebaseError) => {
+            console.error('Firebase write error:', firebaseError);
+            alert('There was an error saving your feedback to the database.');
+          });
+      } catch (firebaseError) {
+        console.error('Error saving to Firebase:', firebaseError);
+        alert('Analysis completed, but there was an error saving your feedback to the database.');
       }
       
       // Don't reset the form immediately so user can see the results

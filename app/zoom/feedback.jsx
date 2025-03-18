@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronLeft, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { auth, db } from '@/firebase/config';
+import { ref, onValue, remove, set } from 'firebase/database';
 
 const FeedbackHistory = () => {
   const [feedbackList, setFeedbackList] = useState([]);
@@ -9,24 +11,26 @@ const FeedbackHistory = () => {
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
-    // Delay to ensure we're in client-side rendering
-    const timer = setTimeout(() => {
+    // Reference to the feedback data in Firebase
+    const feedbackRef = ref(db, 'meetingFeedback');
+    
+    // Set up a listener for changes to the feedback data
+    const unsubscribe = onValue(feedbackRef, (snapshot) => {
       try {
-        // Fetch feedback from localStorage
-        const storedFeedback = localStorage.getItem('meetingFeedback');
+        const data = snapshot.val();
         let parsedFeedback = [];
         
-        if (storedFeedback) {
-          parsedFeedback = JSON.parse(storedFeedback);
-          // Ensure it's an array
-          if (!Array.isArray(parsedFeedback)) {
-            parsedFeedback = [];
-            console.error('Stored feedback is not an array:', storedFeedback);
-          }
+        if (data) {
+          // Convert Firebase object to array with IDs
+          parsedFeedback = Object.entries(data).map(([id, value]) => ({
+            id,
+            ...value
+          }));
+          
+          // Sort by timestamp descending (newest first)
+          parsedFeedback.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         }
         
-        // Sort by timestamp descending (newest first)
-        parsedFeedback.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         setFeedbackList(parsedFeedback);
       } catch (error) {
         console.error('Error loading feedback:', error);
@@ -34,17 +38,20 @@ const FeedbackHistory = () => {
       } finally {
         setIsLoading(false);
       }
-    }, 100);
+    });
     
-    return () => clearTimeout(timer);
+    // Clean up the listener when component unmounts
+    return () => unsubscribe();
   }, []);
 
-  const handleDeleteFeedback = (index) => {
+  const handleDeleteFeedback = (id) => {
     try {
-      const updatedFeedback = [...feedbackList];
-      updatedFeedback.splice(index, 1);
-      setFeedbackList(updatedFeedback);
-      localStorage.setItem('meetingFeedback', JSON.stringify(updatedFeedback));
+      // Reference to the specific feedback entry
+      const feedbackItemRef = ref(db, `meetingFeedback/${id}`);
+      
+      // Remove the feedback from Firebase
+      remove(feedbackItemRef);
+      // Firebase listener will automatically update the state
     } catch (error) {
       console.error('Error deleting feedback:', error);
       alert('Error deleting feedback. Please try again.');
@@ -54,8 +61,12 @@ const FeedbackHistory = () => {
   const handleClearAllFeedback = () => {
     if (window.confirm('Are you sure you want to delete all feedback records?')) {
       try {
-        setFeedbackList([]);
-        localStorage.setItem('meetingFeedback', JSON.stringify([]));
+        // Reference to all feedback data
+        const feedbackRef = ref(db, 'meetingFeedback');
+        
+        // Clear all feedback by setting it to null
+        set(feedbackRef, null);
+        // Firebase listener will automatically update the state
       } catch (error) {
         console.error('Error clearing feedback:', error);
         alert('Error clearing feedback. Please try again.');
@@ -132,7 +143,7 @@ const FeedbackHistory = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screenflex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-xl">Loading feedback...</div>
       </div>
     );
@@ -142,7 +153,6 @@ const FeedbackHistory = () => {
     <div className="min-h-screen p-4">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center mb-6">
-    
           <h1 className="text-2xl font-bold">Feedback History</h1>
         </div>
 
@@ -201,8 +211,8 @@ const FeedbackHistory = () => {
         {/* Feedback List */}
         {filteredFeedback.length > 0 ? (
           <div className="space-y-4">
-            {filteredFeedback.map((item, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
+            {filteredFeedback.map((item) => (
+              <div key={item.id} className="bg-white rounded-lg shadow-md overflow-hidden">
                 <div className="flex justify-between items-center p-4 border-b">
                   <div>
                     <div className="flex items-center gap-3">
@@ -216,7 +226,7 @@ const FeedbackHistory = () => {
                     <p className="text-sm text-gray-500">{formatDate(item.timestamp)}</p>
                   </div>
                   <button
-                    onClick={() => handleDeleteFeedback(index)}
+                    onClick={() => handleDeleteFeedback(item.id)}
                     className="text-gray-400 hover:text-red-500"
                   >
                     <Trash2 size={18} />
@@ -246,7 +256,7 @@ const FeedbackHistory = () => {
                   {item.comments && (
                     <div className="mt-2">
                       <p className="text-sm font-medium text-gray-700">Comments</p>
-                      <p className="mt-1  text-black">{item.comments}</p>
+                      <p className="mt-1 text-black">{item.comments}</p>
                     </div>
                   )}
                   
@@ -255,7 +265,7 @@ const FeedbackHistory = () => {
                       <p className="text-sm font-medium text-gray-700">Sentiment Analysis</p>
                       <div className="grid grid-cols-3 gap-2 mt-2">
                         <div className="text-center p-2 bg-gray-50 rounded">
-                          <p className="text-xs text-gray-500 ">Overall</p>
+                          <p className="text-xs text-gray-500">Overall</p>
                           <p className="font-medium text-black">{(item.sentiment.overall_sentiment * 100).toFixed(1)}%</p>
                         </div>
                         <div className="text-center p-2 bg-gray-50 rounded">
